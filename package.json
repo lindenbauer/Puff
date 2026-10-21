@@ -1,14 +1,11 @@
 {
-  "name": "fursim",
+  "name": "cupko",
   "private": true,
   "version": "1.0.0",
-  "description": "Interactive 3D WebGL2/GPGPU fur physics and Marschner hair shading simulation for a stylized creature across studio, nature, and live AR camera environments.",
+  "description": "Čupko — interaktivni čupavi drugar",
   "scripts": {
-    "predev": "[ -d node_modules/.bin ] || bun install || npm install",
     "dev": "vite --port=3000 --host=0.0.0.0",
-    "prebuild": "[ -d node_modules/.bin ] || bun install || npm install",
     "build": "vite build",
-    "prelint": "[ -d node_modules/.bin ] || bun install || npm install",
     "lint": "tsc --noEmit",
     "start": "node server.js",
     "test": "node adversarial_assessor.js"

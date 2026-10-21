@@ -11,7 +11,7 @@ const uiContainer = document.getElementById('ui-root');
 const hudHint = document.getElementById('hud-hint');
 
 if (hudHint) {
-  hudHint.textContent = 'Drag across Mochi-Puff to pet & comb fur · Click creature to boop · Orbit with mouse';
+  hudHint.textContent = 'Pomazi Čupka povlačenjem prsta · Dodirni ga za iznenađenje';
 }
 
 const urlSearchParams = new URLSearchParams(window.location.search);
@@ -199,7 +199,7 @@ function applyEnvironmentPreset(envId) {
     if (envId === 'ar') {
       hudHint.textContent = 'AR Active: Tap screen to place Mochi on detected surface · Pet or boop him · Drag to orbit';
     } else {
-      hudHint.textContent = 'Drag across Mochi-Puff to pet & comb fur · Click creature to boop · Orbit with mouse';
+      hudHint.textContent = 'Pomazi Čupka povlačenjem prsta · Dodirni ga za iznenađenje';
     }
   }
 }
@@ -373,7 +373,7 @@ function isEventOnUIOverlay(e) {
   );
 }
 
-window.addEventListener('pointermove', (e) => {
+function updatePointer(e) {
   if (isEventOnUIOverlay(e)) {
     isPointerOverCreature = false;
     return;
@@ -404,7 +404,9 @@ window.addEventListener('pointermove', (e) => {
       envManager.updateARCursor(pointerNDC.x, pointerNDC.y, true);
     }
   }
-});
+}
+
+window.addEventListener('pointermove', updatePointer);
 
 window.addEventListener('pointerdown', (e) => {
   pointerDownPos.x = e.clientX;
@@ -412,6 +414,7 @@ window.addEventListener('pointerdown', (e) => {
   if (isEventOnUIOverlay(e)) {
     return;
   }
+  updatePointer(e);
   if (isPointerOverCreature) {
     controls.enabled = false;
   }
@@ -419,6 +422,7 @@ window.addEventListener('pointerdown', (e) => {
 
 window.addEventListener('pointerup', (e) => {
   controls.enabled = true;
+  if (!isEventOnUIOverlay(e)) updatePointer(e);
   const moveDist = Math.hypot(e.clientX - pointerDownPos.x, e.clientY - pointerDownPos.y);
   if (moveDist < 6) {
     if (isEventOnUIOverlay(e)) {
@@ -439,6 +443,12 @@ window.addEventListener('pointerup', (e) => {
       }
     }
   }
+});
+
+window.addEventListener('pointercancel', () => {
+  controls.enabled = true;
+  isPointerOverCreature = false;
+  pointerVelocity.set(0, 0, 0);
 });
 
 // Dynamic DPR & Framerate Guard variables (Zero GC) — Retina by default when compatible
@@ -561,4 +571,3 @@ function animate() {
 }
 
 animate();
-

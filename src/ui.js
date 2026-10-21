@@ -1,7 +1,7 @@
 // Minimalist, XSS-safe Glassmorphic DOM UI for GPU Fur Simulation
 // Features:
 // 1. Primary Scene Selection Menu as a top-floating glass pill bar
-// 2. Collapsible Materials & Lighting Settings panel on the side
+// 2. Collapsible Igrajmo se! Settings panel on the side
 // 3. Native Google Sans font typography with full fallbacks
 // 4. Strict pure safe DOM construction with input sanitization
 
@@ -24,7 +24,7 @@ export function sanitizeHexColor(val, fallback) {
 
 export const FUR_PRESETS = [
   {
-    name: 'Sakura Mochi',
+    name: 'Rozi oblačić',
     baseColor: '#5e2bff',
     tipColor: '#ff9ec7',
     furLength: 0.31,
@@ -35,7 +35,7 @@ export const FUR_PRESETS = [
     curliness: 0.23
   },
   {
-    name: 'Golden Fluff',
+    name: 'Zlatni čupavac',
     baseColor: '#7c3f14',
     tipColor: '#fde68a',
     furLength: 0.38,
@@ -46,7 +46,7 @@ export const FUR_PRESETS = [
     curliness: 0.58
   },
   {
-    name: 'Midnight Velvet',
+    name: 'Plavi san',
     baseColor: '#131638',
     tipColor: '#67e8f9',
     furLength: 0.29,
@@ -57,7 +57,7 @@ export const FUR_PRESETS = [
     curliness: 0.15
   },
   {
-    name: 'Matcha Puff',
+    name: 'Zeleni drugar',
     baseColor: '#1e4631',
     tipColor: '#bbf7d0',
     furLength: 0.36,
@@ -83,6 +83,7 @@ export function createMinimalUI(container, state, onChange) {
   }
   sceneNav.replaceChildren();
 
+  const sceneNames = { studio: '✨ Studio', meadow: '☁️ Oblaci', highrise: '🏡 Za stolom', ar: '📷 U mojoj sobi' };
   const sceneButtons = {};
 
   for (const env of ENVIRONMENT_PRESETS) {
@@ -104,7 +105,7 @@ export function createMinimalUI(container, state, onChange) {
 
     const label = document.createElement('span');
     label.className = 'scene-pill-label';
-    label.textContent = env.name;
+    label.textContent = sceneNames[env.id] || env.name;
 
     pill.appendChild(dot);
     pill.appendChild(label);
@@ -173,7 +174,7 @@ export function createMinimalUI(container, state, onChange) {
 
   const mobileBtnLabel = document.createElement('span');
   mobileBtnLabel.className = 'mobile-controls-btn-label';
-  mobileBtnLabel.textContent = 'Controls';
+  mobileBtnLabel.textContent = 'Igrajmo se';
 
   const mobileBtnSep = document.createElement('span');
   mobileBtnSep.className = 'mobile-controls-btn-sep';
@@ -185,7 +186,7 @@ export function createMinimalUI(container, state, onChange) {
   const currentPresetInit =
     ENVIRONMENT_PRESETS.find((e) => e.id === (state.environment || 'studio')) ||
     ENVIRONMENT_PRESETS[0];
-  mobileBtnScene.textContent = currentPresetInit.name;
+  mobileBtnScene.textContent = sceneNames[currentPresetInit.id];
 
   mobileControlsBtn.appendChild(mobileBtnDot);
   mobileControlsBtn.appendChild(mobileBtnLabel);
@@ -213,7 +214,7 @@ export function createMinimalUI(container, state, onChange) {
 
   const title = document.createElement('span');
   title.className = 'ui-title';
-  title.textContent = 'Materials & Lighting';
+  title.textContent = 'Igrajmo se!';
 
   titleWrap.appendChild(dot);
   titleWrap.appendChild(title);
@@ -229,12 +230,12 @@ export function createMinimalUI(container, state, onChange) {
   function syncToggleBtnLabel() {
     if (isMobileViewport()) {
       const isOpen = container.classList.contains('mobile-sheet-open');
-      toggleBtn.textContent = isOpen ? 'Done' : 'Controls';
+      toggleBtn.textContent = isOpen ? 'Gotovo' : 'Igrajmo se';
       toggleBtn.setAttribute('aria-expanded', String(isOpen));
       mobileControlsBtn.setAttribute('aria-expanded', String(isOpen));
     } else {
       const isCollapsed = container.classList.contains('collapsed');
-      toggleBtn.textContent = isCollapsed ? 'Expand' : 'Collapse';
+      toggleBtn.textContent = isCollapsed ? 'Otvori' : 'Sakrij';
       toggleBtn.setAttribute('aria-expanded', String(!isCollapsed));
     }
   }
@@ -306,7 +307,7 @@ export function createMinimalUI(container, state, onChange) {
       return;
     }
     const isCollapsed = container.classList.toggle('collapsed');
-    toggleBtn.textContent = isCollapsed ? 'Expand' : 'Collapse';
+    toggleBtn.textContent = isCollapsed ? 'Otvori' : 'Sakrij';
     toggleBtn.setAttribute('aria-expanded', String(!isCollapsed));
   });
 
@@ -316,7 +317,7 @@ export function createMinimalUI(container, state, onChange) {
     }
     if (container.classList.contains('collapsed')) {
       container.classList.remove('collapsed');
-      toggleBtn.textContent = 'Collapse';
+      toggleBtn.textContent = 'Sakrij';
       toggleBtn.setAttribute('aria-expanded', 'true');
     }
   });
@@ -346,7 +347,7 @@ export function createMinimalUI(container, state, onChange) {
   }
 
   // --- Mobile-Only Section: Scene Selection inside the Bottom Sheet ---
-  const mobileSceneSection = addSection('Scene Selection');
+  const mobileSceneSection = addSection('🏡 Gdje se igramo?');
   mobileSceneSection.classList.add('mobile-scene-section');
 
   const mobileSceneGrid = document.createElement('div');
@@ -371,7 +372,7 @@ export function createMinimalUI(container, state, onChange) {
 
     const mLabel = document.createElement('span');
     mLabel.className = 'preset-label';
-    mLabel.textContent = env.name;
+    mLabel.textContent = sceneNames[env.id] || env.name;
 
     mBtn.appendChild(mDot);
     mBtn.appendChild(mLabel);
@@ -429,7 +430,7 @@ export function createMinimalUI(container, state, onChange) {
   }
 
   // --- Section 1: Quick Presets ---
-  const presetSection = addSection('Quick Presets');
+  const presetSection = addSection('🎨 Čupkov izgled');
   const presetGrid = document.createElement('div');
   presetGrid.className = 'preset-grid';
 
@@ -476,13 +477,13 @@ export function createMinimalUI(container, state, onChange) {
   const gpuFurModeBtn = document.createElement('button');
   gpuFurModeBtn.type = 'button';
   gpuFurModeBtn.className = 'dpr-pill-btn engine-mode-btn';
-  gpuFurModeBtn.textContent = 'WebGPU (Default)';
+  gpuFurModeBtn.textContent = 'Puno krzno';
   gpuFurModeBtn.setAttribute('aria-label', 'Switch to default 60k WebGPU Fur and GPGPU physics');
 
   const webglModeBtn = document.createElement('button');
   webglModeBtn.type = 'button';
   webglModeBtn.className = 'dpr-pill-btn engine-mode-btn';
-  webglModeBtn.textContent = 'WebGL';
+  webglModeBtn.textContent = 'Lakši prikaz';
   webglModeBtn.setAttribute('aria-label', 'Switch to lightweight WebGL Fur fallback mode');
 
   engineModeRow.appendChild(gpuFurModeBtn);
@@ -492,7 +493,7 @@ export function createMinimalUI(container, state, onChange) {
   addSlider(
     geoSection,
     'furLength',
-    'Fur Length',
+    'Dužina krzna',
     0.06,
     0.62,
     0.01,
@@ -501,7 +502,7 @@ export function createMinimalUI(container, state, onChange) {
   addSlider(
     geoSection,
     'furDensity',
-    'Fur Density',
+    'Gustina krzna',
     0.12,
     1.0,
     0.01,
@@ -513,7 +514,7 @@ export function createMinimalUI(container, state, onChange) {
   addSlider(
     geoSection,
     'curliness',
-    'Curl / Waviness',
+    'Kovrdžice',
     0.0,
     1.0,
     0.01,
@@ -522,7 +523,7 @@ export function createMinimalUI(container, state, onChange) {
   addSlider(
     geoSection,
     'clumping',
-    'Tuft Clumping',
+    'Pramenovi',
     0.0,
     1.0,
     0.01,
@@ -559,8 +560,8 @@ export function createMinimalUI(container, state, onChange) {
     colorRefs[key] = picker;
   }
 
-  addColorPicker('baseColor', 'Root Color');
-  addColorPicker('tipColor', 'Tip Color');
+  addColorPicker('baseColor', 'Boja krzna');
+  addColorPicker('tipColor', 'Boja vrhova');
   shadingSection.appendChild(colorGrid);
 
   addSlider(
@@ -840,13 +841,50 @@ export function createMinimalUI(container, state, onChange) {
   arControlsWrap.appendChild(arBtnRow);
   arSection.appendChild(arControlsWrap);
 
+  // Play controls reuse the existing simulation state and callbacks.
+  const playSection = addSection('✂️ Čupkova frizura');
+  body.insertBefore(playSection, geoSection);
+  for (const key of ['furLength', 'curliness']) {
+    playSection.appendChild(sliderRefs[key].input.closest('.control-row'));
+  }
+  const breeze = document.createElement('button');
+  breeze.type = 'button';
+  breeze.className = 'action-btn cupko-breeze';
+  function syncBreeze() {
+    const on = state.windStrength > 0;
+    breeze.textContent = on ? '🌬️ Zaustavi vjetrić' : '🌬️ Pusti vjetrić';
+    breeze.setAttribute('aria-pressed', String(on));
+  }
+  breeze.addEventListener('click', () => {
+    state.windStrength = state.windStrength > 0 ? 0 : 0.95;
+    onChange('windStrength', state.windStrength);
+    sliderRefs.windStrength.input.value = String(state.windStrength);
+    sliderRefs.windStrength.valSpan.textContent = sliderRefs.windStrength.formatFn(state.windStrength);
+    syncBreeze();
+  });
+  playSection.appendChild(breeze);
+  syncBreeze();
+
+  const workshop = document.createElement('details');
+  workshop.className = 'cupko-workshop';
+  const summary = document.createElement('summary');
+  summary.textContent = '🛠️ Tatina radionica';
+  workshop.appendChild(summary);
+  body.appendChild(workshop);
+  for (const section of [geoSection, shadingSection, lightSection, perfSection]) {
+    workshop.appendChild(section);
+  }
+  document.addEventListener('keydown', (event) => {
+    if (event.key === 'Escape') setMobileSheetOpen(false);
+  });
+
   function updateGPUFurModeUI(isGpuFur) {
     const enabled = Boolean(isGpuFur);
     state.gpuFurEnabled = enabled;
 
     topGpuFurPill.classList.toggle('active', enabled);
     topGpuFurPill.setAttribute('aria-pressed', String(enabled));
-    topGpuLabel.textContent = enabled ? 'WebGPU Fur: ON' : 'WebGL Mode: ON';
+    topGpuLabel.textContent = enabled ? 'Puno krzno' : 'Lakši prikaz';
 
     webglModeBtn.classList.toggle('active', !enabled);
     webglModeBtn.setAttribute('aria-pressed', String(!enabled));
@@ -894,7 +932,7 @@ export function createMinimalUI(container, state, onChange) {
     });
     const matchedPreset = ENVIRONMENT_PRESETS.find((e) => e.id === safeId);
     if (matchedPreset && mobileBtnScene) {
-      mobileBtnScene.textContent = matchedPreset.name;
+      mobileBtnScene.textContent = sceneNames[matchedPreset.id];
     }
     if (arSection) {
       arSection.style.display = safeId === 'ar' ? 'block' : 'none';
@@ -903,6 +941,7 @@ export function createMinimalUI(container, state, onChange) {
 
   return {
     syncUI() {
+      syncBreeze();
       Object.keys(sliderRefs).forEach((k) => {
         sliderRefs[k].input.value = String(state[k]);
         sliderRefs[k].valSpan.textContent = sliderRefs[k].formatFn(state[k]);

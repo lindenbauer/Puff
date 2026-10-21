@@ -1058,3 +1058,13 @@ body.record-mode #page-nav {
 }
 
 
+
+
+/* Čupko play controls */
+.cupko-workshop { margin-top: 18px; border-top: 1px solid #ffffff26; }
+.cupko-workshop summary { cursor: pointer; padding: 18px 4px; color: #e9d5ff; font-weight: 600; }
+.cupko-workshop summary:focus-visible, button:focus-visible { outline: 3px solid #f9a8d4; outline-offset: 3px; }
+.cupko-breeze { width: 100%; min-height: 48px; margin-top: 14px; }
+#ui-root .preset-btn { min-height: 52px; }
+#scene-nav .gpu-fur-pill, #scene-nav .scene-nav-divider { display: none; }
+@media (max-width: 768px) { #ui-root .preset-btn { min-height: 60px; } }
