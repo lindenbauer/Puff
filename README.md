@@ -35,3 +35,9 @@ Ovaj paket nije objavljen i ne mijenja postojeći AI Studio link. Rad bez intern
 ## Status provjera
 
 Build i TypeScript provjera prolaze. Završnu vizuelnu provjeru i reakciju 3D lika na pravom telefonu treba odraditi prije objave.
+
+## Čupkove reakcije
+
+Povlači prst ili miš sa pritisnutim dugmetom preko Čupka: on zadovoljno žmirka. Zvuk se posebno uključuje dugmetom „Uključi zvuk“ i može se odmah utišati. To je tih sintetizovan ton, bez mikrofona ili AI servisa.
+
+Nakon 35 sekundi bez dodira počinje drijemati, a oko 45. sekunde zatvara oči. Dodir ga budi. Vrijeme pauzira dok je kartica skrivena. Spavanje ne mijenja boje, frizuru ili izabrano okruženje.

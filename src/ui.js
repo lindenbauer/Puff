@@ -863,6 +863,17 @@ export function createMinimalUI(container, state, onChange) {
     syncBreeze();
   });
   playSection.appendChild(breeze);
+  const soundBtn = document.createElement('button');
+  soundBtn.type = 'button';
+  soundBtn.className = 'action-btn cupko-breeze';
+  function syncSound() {
+    soundBtn.textContent = state.soundEnabled ? '🔊 Zvuk uključen' : '🔇 Uključi zvuk';
+    soundBtn.setAttribute('aria-pressed', String(Boolean(state.soundEnabled)));
+  }
+  soundBtn.addEventListener('click', () => onChange('toggleSound', !state.soundEnabled));
+  playSection.appendChild(soundBtn);
+  syncSound();
+
   syncBreeze();
 
   const workshop = document.createElement('details');
@@ -941,6 +952,7 @@ export function createMinimalUI(container, state, onChange) {
 
   return {
     syncUI() {
+      syncSound();
       syncBreeze();
       Object.keys(sliderRefs).forEach((k) => {
         sliderRefs[k].input.value = String(state[k]);
