@@ -475,9 +475,11 @@ export function createBlobCreature() {
     animState.boopPhase = 0.0;
   }
 
-  function update(dt, pointerNDC, cameraPos = null, isARMode = false) {
+  function update(dt, pointerNDC, cameraPos = null, isARMode = false, mood = {}) {
     const safeDt = Math.min(Math.max(dt, 0.001), 0.05);
     animState.time += safeDt;
+    const sleep = mood.sleep || 0;
+    const happiness = mood.happiness || 0;
 
     if (faceViewerHoldTimer > 0) {
       faceViewerHoldTimer = Math.max(0, faceViewerHoldTimer - safeDt);
@@ -489,6 +491,7 @@ export function createBlobCreature() {
     } else if (faceViewerHoldTimer > 0) {
       animState.targetLook.set(0, 0);
     }
+    animState.targetLook.multiplyScalar(1 - sleep);
     animState.currentLook.lerp(animState.targetLook, Math.min(1.0, safeDt * 7.5));
 
     // Breathing & happy idle bobbing + boop jump impulse
@@ -533,11 +536,11 @@ export function createBlobCreature() {
     facingPitch += (targetFacingPitch - facingPitch) * Math.min(1.0, safeDt * 12.0);
 
     const s = animState.baseScale;
-    const breath = Math.sin(animState.time * 2.3) * 0.035;
+    const breath = Math.sin(animState.time * (2.3 - sleep * 1.1)) * (0.035 + sleep * 0.012);
     const bodyLookScale = (isPlaced || isARMode) ? (faceViewerHoldTimer > 0 ? 0.0 : 0.06) : 1.0;
-    const swayX = (Math.sin(animState.time * 1.35) * 0.06 + animState.currentLook.x * 0.15 * bodyLookScale) * s;
+    const swayX = (1 - sleep * 0.9) * (Math.sin(animState.time * 1.35) * 0.06 + animState.currentLook.x * 0.15 * bodyLookScale) * s;
     const jumpY =
-      (Math.sin(animState.time * 2.3) * 0.045 +
+      (Math.sin(animState.time * 2.3) * 0.045 * (1 - sleep) +
         Math.abs(Math.sin(animState.boopPhase)) * animState.boopImpulse * 0.32) *
         s;
 
@@ -560,7 +563,7 @@ export function createBlobCreature() {
     root.scale.set((1.0 / Math.sqrt(squash)) * s, squash * s, (1.0 / Math.sqrt(squash)) * s);
     root.rotation.y = facingYaw + animState.currentLook.x * 0.38 * bodyLookScale + Math.sin(animState.time * 0.9) * (isPlaced ? 0.03 : 0.08);
     root.rotation.x = facingPitch - animState.currentLook.y * 0.22 * bodyLookScale + Math.cos(animState.time * 1.8) * (isPlaced ? 0.02 : 0.04);
-    root.rotation.z = -(swayX / s) * 0.35 + Math.sin(animState.boopPhase) * animState.boopImpulse * 0.18;
+    root.rotation.z = sleep * 0.12 + happiness * 0.035 + -(swayX / s) * 0.35 + Math.sin(animState.boopPhase) * animState.boopImpulse * 0.18;
 
     // Compute instantaneous creature velocity & angular velocity for GPGPU fur inertia
     animState.velocity.set(
@@ -590,6 +593,7 @@ export function createBlobCreature() {
       blinkScaleY = Math.min(blinkScaleY, 0.18);
     }
 
+    blinkScaleY = Math.min(blinkScaleY, 1 - happiness * 0.72, 1 - sleep * 0.94);
     for (const eye of eyes) {
       eye.pivot.scale.y = blinkScaleY;
       eye.catchlightMain.position.x = -eye.side * 0.042 + animState.currentLook.x * 0.028;

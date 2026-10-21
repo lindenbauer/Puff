@@ -1,3 +1,4 @@
+import { createCompanion, createCompanionSound } from './companion.js';
 import * as THREE from 'three';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
 import { createBlobCreature } from './blobCreature.js';
@@ -8,10 +9,18 @@ import { createEnvironmentManager } from './environments.js';
 
 const container = document.getElementById('canvas-container');
 const uiContainer = document.getElementById('ui-root');
+const companion = createCompanion();
+const companionSound = createCompanionSound();
+const moodBadge = document.createElement('div');
+moodBadge.id = 'cupko-mood';
+moodBadge.setAttribute('role', 'status');
+moodBadge.textContent = '👋 Pomazi me!';
+document.body.appendChild(moodBadge);
+let lastMood = 'awake';
 const hudHint = document.getElementById('hud-hint');
 
 if (hudHint) {
-  hudHint.textContent = 'Drag across Mochi-Puff to pet & comb fur · Click creature to boop · Orbit with mouse';
+  hudHint.textContent = 'Pomazi Čupka povlačenjem prsta · Dodirni ga za iznenađenje';
 }
 
 const urlSearchParams = new URLSearchParams(window.location.search);
@@ -27,6 +36,7 @@ const simState = {
   rimIntensity: 1.35,
   windStrength: 0.95,
   environment: 'studio',
+  soundEnabled: false,
   gpuFurEnabled: initialGpuFur
 };
 
@@ -199,7 +209,7 @@ function applyEnvironmentPreset(envId) {
     if (envId === 'ar') {
       hudHint.textContent = 'AR Active: Tap screen to place Mochi on detected surface · Pet or boop him · Drag to orbit';
     } else {
-      hudHint.textContent = 'Drag across Mochi-Puff to pet & comb fur · Click creature to boop · Orbit with mouse';
+      hudHint.textContent = 'Pomazi Čupka povlačenjem prsta · Dodirni ga za iznenađenje';
     }
   }
 }
@@ -213,6 +223,14 @@ applyEnvironmentPreset(initialEnvId);
 const ui = createMinimalUI(uiContainer, simState, (key, value) => {
   const u = furSystem.sharedUniforms;
   switch (key) {
+    case 'toggleSound': {
+      companionSound.setEnabled(value).then((enabled) => {
+        simState.soundEnabled = enabled;
+        ui.syncUI();
+        if (value && !enabled) moodBadge.textContent = 'Zvuk nije dostupan u ovom pregledniku.';
+      });
+      break;
+    }
     case 'environment': {
       applyEnvironmentPreset(value);
       ui.syncUI();
@@ -360,6 +378,9 @@ const pointerVelocity = new THREE.Vector3(0, 0, 0);
 let isPointerOverCreature = false;
 let pointerDownPos = { x: 0, y: 0 };
 let boopShockwave = 0.0;
+let activePointer = null;
+let lastStrokeX = 0;
+let lastStrokeY = 0;
 
 function isEventOnUIOverlay(e) {
   return Boolean(
@@ -373,7 +394,7 @@ function isEventOnUIOverlay(e) {
   );
 }
 
-window.addEventListener('pointermove', (e) => {
+function updatePointer(e) {
   if (isEventOnUIOverlay(e)) {
     isPointerOverCreature = false;
     return;
@@ -404,27 +425,49 @@ window.addEventListener('pointermove', (e) => {
       envManager.updateARCursor(pointerNDC.x, pointerNDC.y, true);
     }
   }
+}
+
+window.addEventListener('pointermove', (e) => {
+  updatePointer(e);
+  if (e.pointerId === activePointer && isPointerOverCreature &&
+      Math.hypot(e.clientX - lastStrokeX, e.clientY - lastStrokeY) > 2) {
+    companion.interact(true);
+    companionSound.coo();
+    lastStrokeX = e.clientX;
+    lastStrokeY = e.clientY;
+  }
 });
 
 window.addEventListener('pointerdown', (e) => {
+  if (activePointer !== null || !e.isPrimary) return;
   pointerDownPos.x = e.clientX;
   pointerDownPos.y = e.clientY;
   if (isEventOnUIOverlay(e)) {
     return;
   }
+  activePointer = e.pointerId;
+  lastStrokeX = e.clientX;
+  lastStrokeY = e.clientY;
+  companion.interact();
+  updatePointer(e);
   if (isPointerOverCreature) {
     controls.enabled = false;
   }
 });
 
 window.addEventListener('pointerup', (e) => {
+  if (e.pointerId !== activePointer) return;
+  activePointer = null;
   controls.enabled = true;
+  if (!isEventOnUIOverlay(e)) updatePointer(e);
   const moveDist = Math.hypot(e.clientX - pointerDownPos.x, e.clientY - pointerDownPos.y);
   if (moveDist < 6) {
     if (isEventOnUIOverlay(e)) {
       return;
     }
     if (isPointerOverCreature) {
+      companion.interact(true);
+      companionSound.coo();
       creature.triggerBoop();
       boopShockwave = 1.0;
     } else if (simState.environment === 'ar' && tapToPlaceEnabled) {
@@ -439,6 +482,18 @@ window.addEventListener('pointerup', (e) => {
       }
     }
   }
+});
+
+function releasePointer() {
+  activePointer = null;
+  controls.enabled = true;
+  isPointerOverCreature = false;
+  pointerVelocity.set(0, 0, 0);
+}
+window.addEventListener('pointercancel', releasePointer);
+window.addEventListener('blur', () => { releasePointer(); companionSound.stop(); });
+document.addEventListener('visibilitychange', () => {
+  if (document.hidden) { releasePointer(); companionSound.stop(); }
 });
 
 // Dynamic DPR & Framerate Guard variables (Zero GC) — Retina by default when compatible
@@ -475,7 +530,13 @@ function animate() {
   requestAnimationFrame(animate);
 
   const dt = Math.min(clock.getDelta(), 0.033);
+  if (document.hidden) return;
   elapsedTime += dt;
+  const mood = companion.update(dt);
+  if (mood.mood !== lastMood) {
+    lastMood = mood.mood;
+    moodBadge.textContent = { awake: '👋 Pomazi me!', happy: '❤️ Baš mi prija!', sleepy: '🥱 Malo mi se spava…', sleeping: '💤 Zzz… Dodirni me da se probudim.' }[lastMood];
+  }
 
   // Auto-FPS Guard: Automatically safeguards framerate during screen recording or heavy load
   if (autoFPSGuard && !isRecordMode) {
@@ -513,7 +574,7 @@ function animate() {
   pointerVelocity.multiplyScalar(Math.exp(-dt * 12.0));
 
   // Update creature breathing, eye tracking, viewer-facing AR orientation, and bounce inertia
-  creature.update(dt, pointerNDC, camera.position, simState.environment === 'ar');
+  creature.update(dt, pointerNDC, camera.position, simState.environment === 'ar', mood);
 
   // Update active 3D / AR environment (Studio, Meadow, Cozy Highrise, AR View)
   envManager.update(elapsedTime, simState.windStrength, creature.root);
@@ -561,4 +622,3 @@ function animate() {
 }
 
 animate();
-
