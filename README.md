@@ -41,3 +41,13 @@ Build i TypeScript provjera prolaze. Završnu vizuelnu provjeru i reakciju 3D li
 Povlači prst ili miš sa pritisnutim dugmetom preko Čupka: on zadovoljno žmirka. Zvuk se posebno uključuje dugmetom „Uključi zvuk“ i može se odmah utišati. To je tih sintetizovan ton, bez mikrofona ili AI servisa.
 
 Nakon 35 sekundi bez dodira počinje drijemati, a oko 45. sekunde zatvara oči. Dodir ga budi. Vrijeme pauzira dok je kartica skrivena. Spavanje ne mijenja boje, frizuru ili izabrano okruženje.
+
+## Govor i golicanje
+
+U odjeljku „Čupko priča“ pritisni „Reci ćao“. Oblačić radi i bez glasa. Glas se posebno uključuje dugmetom „Uključi glas“; možeš izabrati dostupni glas uređaja. Prvo se bira srpski, bosanski ili hrvatski glas ako postoji, inače podrazumijevani glas. Izgovor zato zavisi od uređaja. Glasovi se mogu pojaviti naknadno.
+
+Čupko reaguje na nekoliko brzih pokreta naprijed-nazad dok držiš prst ili miš preko njegovog tijela. Reakcije imaju pauzu od osam sekundi. Jedan prelazak mišem preko pozadine ne izaziva govor. Duže maženje, drijemanje i buđenje imaju kratke pripremljene poruke.
+
+„Utišaj sve“ isključuje glas i zvučiće. Skrivena kartica prekida govor i uklanja oblačić. Ovo nije AI razgovor i ne koristi mikrofon. Govor koristi preglednikov Web Speech mehanizam; neki glasovi uređaja zahtijevaju mrežu.
+
+Pokretanje je isto: `npm ci`, pa `npm run dev`. Provjere: `npm test`, `npm run build`, `npm run lint`. Govor i izgled oblačića još treba provjeriti na stvarnom telefonu. Ovaj dodatak je zasnovan na provjerenoj `cupko/play-mode` verziji; nedostajući mood/audio/fx/starGame moduli iz priloženog prijedloga nisu kopirani.
