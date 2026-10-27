@@ -29,6 +29,7 @@ export function createCompanionSound(makeContext = () => {
 }) {
   let context;
   let enabled = false;
+  let request = 0;
   let lastCoo = -Infinity;
   const active = new Set();
   function stop() {
@@ -41,12 +42,14 @@ export function createCompanionSound(makeContext = () => {
   }
   return {
     async setEnabled(value) {
+      const token = ++request;
       if (!value) { enabled = false; stop(); return false; }
       try {
         context ||= makeContext();
         if (!context) return false;
         // Called directly from a button gesture to satisfy mobile audio policies.
         await context.resume();
+        if (token !== request) return enabled;
         enabled = context.state === 'running';
       } catch { enabled = false; }
       return enabled;

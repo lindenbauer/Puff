@@ -1,3 +1,4 @@
+import { createSpeech, createTickleDetector } from './speech.js';
 import { createCompanion, createCompanionSound } from './companion.js';
 import * as THREE from 'three';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
@@ -16,6 +17,7 @@ moodBadge.id = 'cupko-mood';
 moodBadge.setAttribute('role', 'status');
 moodBadge.textContent = '👋 Pomazi me!';
 document.body.appendChild(moodBadge);
+let soundRequest = 0;
 let lastMood = 'awake';
 const hudHint = document.getElementById('hud-hint');
 
@@ -37,6 +39,7 @@ const simState = {
   windStrength: 0.95,
   environment: 'studio',
   soundEnabled: false,
+  speechEnabled: false,
   gpuFurEnabled: initialGpuFur
 };
 
@@ -224,13 +227,33 @@ const ui = createMinimalUI(uiContainer, simState, (key, value) => {
   const u = furSystem.sharedUniforms;
   switch (key) {
     case 'toggleSound': {
+      const request = ++soundRequest;
       companionSound.setEnabled(value).then((enabled) => {
+        if (request !== soundRequest) return;
         simState.soundEnabled = enabled;
         ui.syncUI();
         if (value && !enabled) moodBadge.textContent = 'Zvuk nije dostupan u ovom pregledniku.';
       });
       break;
     }
+    case 'sayHello':
+      companion.interact();
+      speech.say('Ćao! Ja sam Čupko. Hajde da se igramo!', { manual: true });
+      break;
+    case 'toggleSpeech':
+      simState.speechEnabled = speech.setEnabled(value);
+      if (simState.speechEnabled) speech.say('Ćao! Ja sam Čupko!', { manual: true });
+      break;
+    case 'speechVoice':
+      speech.selectVoice(value);
+      break;
+    case 'muteAll':
+      soundRequest++;
+      simState.soundEnabled = false;
+      companionSound.setEnabled(false);
+      simState.speechEnabled = speech.setEnabled(false);
+      ui.syncUI();
+      break;
     case 'environment': {
       applyEnvironmentPreset(value);
       ui.syncUI();
@@ -343,6 +366,21 @@ const ui = createMinimalUI(uiContainer, simState, (key, value) => {
   }
 });
 
+const speechBubble = document.createElement('div');
+speechBubble.id = 'cupko-speech-bubble';
+speechBubble.setAttribute('role', 'status');
+speechBubble.hidden = true;
+document.body.appendChild(speechBubble);
+const speech = createSpeech({
+  synth: window.speechSynthesis,
+  Utterance: window.SpeechSynthesisUtterance,
+  show(text) { speechBubble.textContent = text; speechBubble.hidden = false; },
+  hide() { speechBubble.hidden = true; },
+  talking(active) { document.body.classList.toggle('cupko-talking', active); },
+  changed(status) { simState.speechEnabled = status.enabled; ui.setSpeechStatus(status); }
+});
+const tickle = createTickleDetector();
+
 let tapToPlaceEnabled = true;
 
 envManager.onARStatusChange((statusText, isLive) => {
@@ -381,6 +419,7 @@ let boopShockwave = 0.0;
 let activePointer = null;
 let lastStrokeX = 0;
 let lastStrokeY = 0;
+let petDistance = 0;
 
 function isEventOnUIOverlay(e) {
   return Boolean(
@@ -429,10 +468,19 @@ function updatePointer(e) {
 
 window.addEventListener('pointermove', (e) => {
   updatePointer(e);
+  if (!isPointerOverCreature) tickle.reset();
   if (e.pointerId === activePointer && isPointerOverCreature &&
       Math.hypot(e.clientX - lastStrokeX, e.clientY - lastStrokeY) > 2) {
     companion.interact(true);
+    petDistance += Math.hypot(e.clientX - lastStrokeX, e.clientY - lastStrokeY);
     companionSound.coo();
+    if (tickle.move(e.clientX, e.clientY, e.timeStamp)) {
+      if (speech.say('Hihihi, to golica!')) {
+        creature.triggerBoop();
+        boopShockwave = 0.5;
+      }
+    }
+    if (petDistance > 400) { speech.say('Baš mi prija maženje.'); petDistance = 0; }
     lastStrokeX = e.clientX;
     lastStrokeY = e.clientY;
   }
@@ -445,9 +493,12 @@ window.addEventListener('pointerdown', (e) => {
   if (isEventOnUIOverlay(e)) {
     return;
   }
+  tickle.reset();
+  petDistance = 0;
   activePointer = e.pointerId;
   lastStrokeX = e.clientX;
   lastStrokeY = e.clientY;
+  if (lastMood === 'sleeping') speech.say('Dobro jutro! Hoćemo li se igrati?');
   companion.interact();
   updatePointer(e);
   if (isPointerOverCreature) {
@@ -485,15 +536,17 @@ window.addEventListener('pointerup', (e) => {
 });
 
 function releasePointer() {
+  tickle.reset();
   activePointer = null;
   controls.enabled = true;
   isPointerOverCreature = false;
   pointerVelocity.set(0, 0, 0);
 }
 window.addEventListener('pointercancel', releasePointer);
-window.addEventListener('blur', () => { releasePointer(); companionSound.stop(); });
+window.addEventListener('pagehide', () => speech.stop());
+window.addEventListener('blur', () => { releasePointer(); companionSound.stop(); speech.stop(); });
 document.addEventListener('visibilitychange', () => {
-  if (document.hidden) { releasePointer(); companionSound.stop(); }
+  if (document.hidden) { releasePointer(); companionSound.stop(); speech.stop(); }
 });
 
 // Dynamic DPR & Framerate Guard variables (Zero GC) — Retina by default when compatible
@@ -535,6 +588,7 @@ function animate() {
   const mood = companion.update(dt);
   if (mood.mood !== lastMood) {
     lastMood = mood.mood;
+    if (lastMood === 'sleepy') speech.say('Zijev… vrijeme je za odmor.');
     moodBadge.textContent = { awake: '👋 Pomazi me!', happy: '❤️ Baš mi prija!', sleepy: '🥱 Malo mi se spava…', sleeping: '💤 Zzz… Dodirni me da se probudim.' }[lastMood];
   }
 

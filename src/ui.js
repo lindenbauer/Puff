@@ -873,6 +873,35 @@ export function createMinimalUI(container, state, onChange) {
   soundBtn.addEventListener('click', () => onChange('toggleSound', !state.soundEnabled));
   playSection.appendChild(soundBtn);
   syncSound();
+  const speechSection = addSection('💬 Čupko priča');
+  body.insertBefore(speechSection, geoSection);
+  const helloBtn = document.createElement('button');
+  helloBtn.type = 'button';
+  helloBtn.className = 'action-btn cupko-breeze';
+  helloBtn.textContent = '👋 Reci ćao';
+  helloBtn.addEventListener('click', () => onChange('sayHello', true));
+  const speechBtn = document.createElement('button');
+  speechBtn.type = 'button';
+  speechBtn.className = 'action-btn cupko-breeze';
+  speechBtn.textContent = '🗣️ Uključi glas';
+  speechBtn.setAttribute('aria-pressed', 'false');
+  speechBtn.addEventListener('click', () => onChange('toggleSpeech', !state.speechEnabled));
+  const voiceLabel = document.createElement('label');
+  voiceLabel.className = 'cupko-voice-label';
+  voiceLabel.textContent = 'Glas uređaja';
+  const voiceSelect = document.createElement('select');
+  voiceSelect.setAttribute('aria-label', 'Glas uređaja');
+  voiceSelect.addEventListener('change', () => onChange('speechVoice', voiceSelect.value));
+  voiceLabel.appendChild(voiceSelect);
+  const speechNote = document.createElement('p');
+  speechNote.className = 'cupko-speech-note';
+  const muteBtn = document.createElement('button');
+  muteBtn.type = 'button';
+  muteBtn.className = 'action-btn cupko-breeze';
+  muteBtn.textContent = '🔕 Utišaj sve';
+  muteBtn.addEventListener('click', () => onChange('muteAll', true));
+  speechSection.append(helloBtn, speechBtn, voiceLabel, speechNote, muteBtn);
+
 
   syncBreeze();
 
@@ -951,6 +980,24 @@ export function createMinimalUI(container, state, onChange) {
   }
 
   return {
+    setSpeechStatus(status) {
+      speechBtn.textContent = status.enabled ? '🗣️ Isključi glas' : '🗣️ Uključi glas';
+      speechBtn.setAttribute('aria-pressed', String(status.enabled));
+      speechBtn.disabled = !status.supported;
+      voiceSelect.replaceChildren();
+      for (const voice of status.voices) {
+        const option = document.createElement('option');
+        option.value = voice.voiceURI;
+        option.textContent = `${voice.name} (${voice.lang})`;
+        voiceSelect.appendChild(option);
+      }
+      if (status.voice) voiceSelect.value = status.voice.voiceURI;
+      voiceSelect.disabled = status.voices.length === 0;
+      speechNote.textContent = !status.supported ? 'Glas nije dostupan. Čupkove poruke su i dalje tu.'
+        : !status.voice ? 'Glasovi se učitavaju ili nisu dostupni. Poruke rade i bez njih.'
+        : /^(sr|bs|hr)(-|$)/i.test(status.voice.lang) ? 'Glas je iz tvog uređaja. Isprobaj ga dugmetom „Reci ćao“.'
+        : 'Nema automatski izabranog glasa za naš jezik. Izgovor može biti drugačiji; možeš izabrati drugi glas.';
+    },
     syncUI() {
       syncSound();
       syncBreeze();

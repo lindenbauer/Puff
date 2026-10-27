@@ -72,3 +72,14 @@ test('sleep and happiness close the 3D eyes without changing environment scale',
   pet.update(1 / 60, null, null, false, {sleep: 0, happiness: 0});
   assert.ok(eyes.every(eye => eye.scale.y > 0.9));
 });
+
+test('muting while audio activation is pending stays muted', async () => {
+  let resolveResume;
+  const ctx={state:'suspended',resume(){return new Promise(resolve=>{resolveResume=()=>{this.state='running';resolve();};});}};
+  const sound=createCompanionSound(()=>ctx);
+  const activation=sound.setEnabled(true);
+  await sound.setEnabled(false);
+  resolveResume();
+  assert.equal(await activation,false);
+  assert.equal(sound.coo(),false);
+});
